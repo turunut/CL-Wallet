@@ -3,12 +3,19 @@ import hashlib
 import json
 import time
 import datetime
+from six import moves
 from helpers import is_py2, fetch_user_input, pretty_print, intercept_keyboard_interrupts, handle_replay, get_decoded_string
 from operator import itemgetter
 from iota import Iota, ProposedTransaction, Address,\
     TryteString, Tag, Transaction
 from iota.crypto.addresses import AddressGenerator
 
+iotaNode = moves.input("""
+To use this script you must connect to a IOTA node. You can use your local node address "http://localhost:14265"
+if you have a full node running or you can connect to a remote node. You can finde remote nodes to connect to on
+http://iotasupport.com/lightwallet.shtml
+
+Please enter a node address to connect to: """)
 
 pretty_print('\nStarting wallet...\n\n\n\n')
 
@@ -549,13 +556,10 @@ def generate_addresses(count):
         else:
             start_index = max(index_list) + 1
 
-        as_encoded = seed if is_py2 else seed.encode('utf-8')
-        generator = AddressGenerator(as_encoded)
-
-        '''
-        This is the actual function to generate the address.
-        '''
-        addresses = generator.get_addresses(start_index, count)
+        api = Iota(iotaNode, seed) # The iota nodes IP address must always be supplied, even if it actually isn't used in this case.
+        gna_result = api.get_new_addresses( count=1, security_level = 3) # This is the actual function to generate the address.
+        addresses = gna_result['addresses']
+		
         i = 0
 
         while i < count:
@@ -1090,7 +1094,7 @@ def get_inputs():
             address = p['address']
             address = bytes(address) if is_py2 else address.encode()
             index = int(p['index'])
-            input = Address(address,key_index=index,security_level=2)
+            input = Address(address,key_index=index,security_level=3)
             inputs.append(input)
 
     return inputs
